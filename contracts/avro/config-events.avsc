@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "ConfigChangedEvent",
+  "namespace": "id.bi.detp.events",
+  "doc": "Policy rule publish events for hot reload via Kafka topic config.events",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "ruleId", "type": "string"},
+    {"name": "ruleName", "type": "string"},
+    {"name": "ruleVersion", "type": "int"},
+    {"name": "status", "type": "string"},
+    {"name": "effectiveFrom", "type": "string"},
+    {"name": "publishedAt", "type": "string"},
+    {"name": "publishedBy", "type": "string"}
+  ]
+}

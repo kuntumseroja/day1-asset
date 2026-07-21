@@ -1,0 +1,13 @@
+package id.bi.detp.policy.rules
+
+import id.bi.detp.policy.domain.PolicyFact
+import id.bi.detp.policy.domain.PolicyDecision
+
+rule "cutoff_window"
+when
+    $f : PolicyFact( evalHour() >= 22 || evalHour() < 6 )
+    $d : PolicyDecision( decision == "ALLOW" )
+then
+    $d.setDecision("DENY");
+    $d.setReason("cutoff_window");
+end

@@ -1,0 +1,13 @@
+package id.bi.detp.policy.rules
+
+import id.bi.detp.policy.domain.PolicyFact
+import id.bi.detp.policy.domain.PolicyDecision
+
+rule "tier_limit"
+when
+    $f : PolicyFact( tier == "TIER_2", amount > 1000000000L )
+    $d : PolicyDecision( decision == "ALLOW" )
+then
+    $d.setDecision("DENY");
+    $d.setReason("tier_limit");
+end

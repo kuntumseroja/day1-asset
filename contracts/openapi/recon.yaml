@@ -1,0 +1,152 @@
+openapi: 3.0.3
+info:
+  title: Reconciliation Service API
+  version: 0.1.0
+  description: Three-way reconciliation (RTGS omnibus = platform ledger = on-chain supply)
+servers:
+  - url: http://localhost:8085/api/v1
+paths:
+  /recon/run:
+    post:
+      summary: Trigger on-demand reconciliation run
+      operationId: runRecon
+      responses:
+        '200':
+          description: Recon result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconResult'
+  /recon/status:
+    get:
+      summary: Latest recon status tile
+      operationId: getReconStatus
+      responses:
+        '200':
+          description: Green/red status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconStatus'
+  /cases:
+    get:
+      summary: List discrepancy cases
+      operationId: listCases
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [OPEN, RESOLVED]
+      responses:
+        '200':
+          description: Cases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscrepancyCase'
+  /cases/{id}/resolve:
+    post:
+      summary: Resolve discrepancy case with evidence
+      operationId: resolveCase
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolveRequest'
+      responses:
+        '200':
+          description: Case resolved
+components:
+  schemas:
+    ReconResult:
+      type: object
+      properties:
+        runId:
+          type: string
+          format: uuid
+        balanced:
+          type: boolean
+        rtgsOmnibus:
+          type: integer
+          format: int64
+        platformLedger:
+          type: integer
+          format: int64
+        chainSupply:
+          type: integer
+          format: int64
+        pipelineIn:
+          type: integer
+          format: int64
+        pipelineOut:
+          type: integer
+          format: int64
+        delta:
+          type: integer
+          format: int64
+        lsn:
+          type: string
+        blockHeight:
+          type: integer
+          format: int64
+    ReconStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [GREEN, RED]
+        lastRunAt:
+          type: string
+          format: date-time
+        openCases:
+          type: integer
+    DiscrepancyCase:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [OPEN, RESOLVED]
+        delta:
+          type: integer
+          format: int64
+        rtgsBalance:
+          type: integer
+          format: int64
+        platformBalance:
+          type: integer
+          format: int64
+        chainBalance:
+          type: integer
+          format: int64
+        candidateUetrs:
+          type: array
+          items:
+            type: string
+        slaDeadline:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    ResolveRequest:
+      type: object
+      required: [resolution, evidence]
+      properties:
+        resolution:
+          type: string
+        evidence:
+          type: string

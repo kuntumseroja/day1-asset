@@ -1,0 +1,197 @@
+openapi: 3.0.3
+info:
+  title: Policy Service API
+  version: 0.1.0
+  description: Drools-based policy-as-data enforcement (Asset 3)
+servers:
+  - url: http://localhost:8084/api/v1
+paths:
+  /policy/evaluate:
+    post:
+      summary: Synchronous policy evaluation at GATE
+      operationId: evaluatePolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluationRequest'
+      responses:
+        '200':
+          description: Evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationResult'
+  /rules:
+    get:
+      summary: List policy rules
+      operationId: listRules
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, TESTED, APPROVED, ACTIVE]
+      responses:
+        '200':
+          description: Rule list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PolicyRule'
+    post:
+      summary: Create draft rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRuleRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyRule'
+  /rules/{id}:
+    get:
+      summary: Get rule by ID
+      operationId: getRule
+      parameters:
+        - $ref: '#/components/parameters/RuleId'
+      responses:
+        '200':
+          description: Rule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyRule'
+    patch:
+      summary: Transition rule status (maker-checker)
+      operationId: transitionRule
+      parameters:
+        - $ref: '#/components/parameters/RuleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleTransition'
+      responses:
+        '200':
+          description: Updated rule
+        '403':
+          description: Author cannot approve own rule
+  /rules/{id}/test:
+    post:
+      summary: Test rule against replay traffic
+      operationId: testRule
+      parameters:
+        - $ref: '#/components/parameters/RuleId'
+      responses:
+        '200':
+          description: Test results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleTestResult'
+components:
+  parameters:
+    RuleId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    EvaluationRequest:
+      type: object
+      required: [participantId, tier, amount, dailyCumulative, timestamp]
+      properties:
+        participantId:
+          type: string
+        tier:
+          type: string
+        amount:
+          type: integer
+          format: int64
+        dailyCumulative:
+          type: integer
+          format: int64
+        timestamp:
+          type: string
+          format: date-time
+    EvaluationResult:
+      type: object
+      required: [decision, ruleId, ruleVersion]
+      properties:
+        decision:
+          type: string
+          enum: [ALLOW, DENY]
+        reason:
+          type: string
+        ruleId:
+          type: string
+        ruleVersion:
+          type: integer
+    PolicyRule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        drlContent:
+          type: string
+        version:
+          type: integer
+        status:
+          type: string
+          enum: [DRAFT, TESTED, APPROVED, ACTIVE]
+        effectiveFrom:
+          type: string
+          format: date-time
+        authorId:
+          type: string
+        approverId:
+          type: string
+    CreateRuleRequest:
+      type: object
+      required: [name, drlContent, authorId]
+      properties:
+        name:
+          type: string
+        drlContent:
+          type: string
+        authorId:
+          type: string
+        effectiveFrom:
+          type: string
+          format: date-time
+    RuleTransition:
+      type: object
+      required: [action, actorId]
+      properties:
+        action:
+          type: string
+          enum: [SUBMIT_TEST, APPROVE, ACTIVATE]
+        actorId:
+          type: string
+    RuleTestResult:
+      type: object
+      properties:
+        passed:
+          type: boolean
+        casesRun:
+          type: integer
+        failures:
+          type: array
+          items:
+            type: object

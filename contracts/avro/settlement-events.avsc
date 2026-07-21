@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "SettlementEvent",
+  "namespace": "id.bi.detp.events",
+  "doc": "Settlement lifecycle events pushed to UI via WebSocket / Kafka topic settlement.events",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "eventType", "type": {"type": "enum", "name": "SettlementEventType", "symbols": ["QUEUE_UPDATE", "STATUS_TRANSITION", "SETTLEMENT_COMPLETED", "COMPENSATING_REFUND", "DUPLICATE_SUPPRESSED"]}},
+    {"name": "uetr", "type": "string"},
+    {"name": "participantId", "type": "string"},
+    {"name": "transactionType", "type": {"type": "enum", "name": "TransactionType", "symbols": ["ISSUANCE", "REDEMPTION", "TRANSFER"]}},
+    {"name": "status", "type": "string"},
+    {"name": "amount", "type": "long"},
+    {"name": "queuePosition", "type": ["null", "int"], "default": null},
+    {"name": "timestamp", "type": "string"},
+    {"name": "duplicateSuppressed", "type": "boolean", "default": false}
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "description": "Yesterday traffic replay for policy rule testing",
+  "cases": [
+    {"participantId": "BANK-A", "tier": "TIER_1", "amount": 499999999, "dailyCumulative": 1000000000, "timestamp": "2026-07-20T10:00:00Z", "expected": "ALLOW"},
+    {"participantId": "BANK-A", "tier": "TIER_1", "amount": 500000000, "dailyCumulative": 1000000000, "timestamp": "2026-07-20T10:01:00Z", "expected": "ALLOW"},
+    {"participantId": "BANK-A", "tier": "TIER_1", "amount": 500000001, "dailyCumulative": 1000000000, "timestamp": "2026-07-20T10:02:00Z", "expected": "DENY"},
+    {"participantId": "BANK-B", "tier": "TIER_2", "amount": 300000000, "dailyCumulative": 2000000000, "timestamp": "2026-07-20T11:00:00Z", "expected": "ALLOW"},
+    {"participantId": "BANK-A", "tier": "TIER_1", "amount": 100000000, "dailyCumulative": 4900000000, "timestamp": "2026-07-20T14:00:00Z", "expected": "DENY"},
+    {"participantId": "BANK-A", "tier": "TIER_1", "amount": 100000000, "dailyCumulative": 1000000000, "timestamp": "2026-07-20T23:30:00Z", "expected": "DENY"},
+    {"participantId": "BANK-A", "tier": "TIER_1", "amount": 100000000, "dailyCumulative": 1000000000, "timestamp": "2026-07-20T08:00:00Z", "expected": "ALLOW"}
+  ]
+}

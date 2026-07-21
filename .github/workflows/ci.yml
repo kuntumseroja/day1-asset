@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate OpenAPI specs exist
+        run: |
+          test -f contracts/openapi/portal-bff.yaml
+          test -f contracts/openapi/policy.yaml
+          test -f contracts/openapi/recon.yaml
+          test -f contracts/avro/settlement-events.avsc
+          test -f contracts/avro/config-events.avsc
+
+  sim-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build simulators
+        run: docker compose build rtgs-sim firefly-stub portal-sim
+
+  policy-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: detp
+          POSTGRES_PASSWORD: detp
+          POSTGRES_DB: detp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Init schema
+        run: PGPASSWORD=detp psql -h localhost -U detp -d detp -f db/migrations/V1__core_tables.sql
+      - name: Policy tests
+        working-directory: policy
+        run: mvn -B test
+
+  portal-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build portal
+        working-directory: portal
+        run: npm ci && npm run build
+
+  ceremonies-dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ceremonies dry-run
+        run: make -C ceremonies dry-run

@@ -1,0 +1,11 @@
+server:
+  port: 8087
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/detp
+    username: detp
+    password: detp
+firefly:
+  base-url: http://localhost:8092
+  ws-url: ws://localhost:8092/ws
+  listener-id: firefly-kit-1

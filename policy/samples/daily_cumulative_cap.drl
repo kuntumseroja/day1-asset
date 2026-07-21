@@ -1,0 +1,13 @@
+package id.bi.detp.policy.rules
+
+import id.bi.detp.policy.domain.PolicyFact
+import id.bi.detp.policy.domain.PolicyDecision
+
+rule "daily_cumulative_cap"
+when
+    $f : PolicyFact( dailyCumulative + amount >= 5000000000L )
+    $d : PolicyDecision( decision == "ALLOW" )
+then
+    $d.setDecision("DENY");
+    $d.setReason("daily_cumulative_cap");
+end

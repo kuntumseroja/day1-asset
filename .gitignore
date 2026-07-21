@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Build outputs
+dist/
+build/
+portal/dist/
+*.class
+*.jar
+!**/gradle-wrapper.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Environment
+.env
+.env.local
+*.log
+
+# SoftHSM / ceremonies evidence
+ceremonies/evidence/
+ceremonies/softhsm/
+
+# Pact
+pact/logs/
+contracts/pact/*.json
+
+# Docker volumes
+.docker/
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Temporal
+.temporal/

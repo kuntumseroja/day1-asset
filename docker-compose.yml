@@ -1,0 +1,142 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: detp
+      POSTGRES_PASSWORD: detp
+      POSTGRES_DB: detp
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/migrations/V1__core_tables.sql:/docker-entrypoint-initdb.d/V1__core_tables.sql
+      - ./db/init-pact-db.sh:/docker-entrypoint-initdb.d/00-init-pact-db.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U detp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redpanda:
+    image: redpandadata/redpanda:v24.2.4
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp=1
+      - --memory=512M
+      - --reserve-memory=0M
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092
+      - --pandaproxy-addr=PLAINTEXT://0.0.0.0:8082
+      - --advertise-pandaproxy-addr=PLAINTEXT://redpanda:8082
+      - --schema-registry-addr=0.0.0.0:8081
+    ports:
+      - "9092:9092"
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9644/v1/status/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8180
+    ports:
+      - "8180:8180"
+    volumes:
+      - ./keycloak/detp-realm.json:/opt/keycloak/data/import/detp-realm.json
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8180/health/ready || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+
+  temporal:
+    image: temporalio/auto-setup:1.24.2
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=detp
+      - POSTGRES_PWD=detp
+      - POSTGRES_SEEDS=postgres
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+    ports:
+      - "7233:7233"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  temporal-ui:
+    image: temporalio/ui:2.31.2
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+    ports:
+      - "8088:8080"
+    depends_on:
+      - temporal
+
+  pact-broker:
+    image: pactfoundation/pact-broker:latest
+    environment:
+      PACT_BROKER_DATABASE_URL: postgres://detp:detp@postgres:5432/pact
+      PACT_BROKER_BASIC_AUTH_USERNAME: pact
+      PACT_BROKER_BASIC_AUTH_PASSWORD: pact
+    ports:
+      - "9292:9292"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  rtgs-sim:
+    build: ./sim/rtgs-sim
+    ports:
+      - "8091:8081"
+    environment:
+      PORT: 8081
+      SAGA_WEBHOOK_URL: http://host.docker.internal:8086/api/v1/rtgs/debit-confirmed
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  firefly-stub:
+    build: ./sim/firefly-stub
+    ports:
+      - "8092:8082"
+    environment:
+      PORT: 8082
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  portal-sim:
+    build: ./sim/portal-sim
+    ports:
+      - "8093:8083"
+    environment:
+      PORT: 8083
+      POLICY_URL: http://host.docker.internal:8084
+      RTGS_SIM_URL: http://rtgs-sim:8081
+    volumes:
+      - ./sim/scripted-day.json:/app/scripted-day.json:ro
+    depends_on:
+      - rtgs-sim
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

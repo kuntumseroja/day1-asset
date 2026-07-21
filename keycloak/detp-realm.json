@@ -1,0 +1,90 @@
+{
+  "realm": "detp",
+  "enabled": true,
+  "displayName": "D-ETP Dev",
+  "roles": {
+    "realm": [
+      {"name": "MAKER", "description": "Transaction maker"},
+      {"name": "CHECKER", "description": "Transaction checker"},
+      {"name": "OPERATOR", "description": "Platform operator"}
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "portal",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["http://localhost:5173/*", "http://localhost:8083/*"],
+      "webOrigins": ["http://localhost:5173", "http://localhost:8083"],
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "bankA",
+      "enabled": true,
+      "email": "banka@pilot.detp.local",
+      "firstName": "Bank",
+      "lastName": "A Pilot",
+      "credentials": [{"type": "password", "value": "bankA123!", "temporary": false}],
+      "realmRoles": ["MAKER"],
+      "attributes": {
+        "participant_id": ["BANK-A"],
+        "tier": ["TIER_1"]
+      }
+    },
+    {
+      "username": "bankB",
+      "enabled": true,
+      "email": "bankb@pilot.detp.local",
+      "firstName": "Bank",
+      "lastName": "B Pilot",
+      "credentials": [{"type": "password", "value": "bankB123!", "temporary": false}],
+      "realmRoles": ["MAKER"],
+      "attributes": {
+        "participant_id": ["BANK-B"],
+        "tier": ["TIER_2"]
+      }
+    },
+    {
+      "username": "operator",
+      "enabled": true,
+      "email": "ops@detp.local",
+      "firstName": "Platform",
+      "lastName": "Operator",
+      "credentials": [{"type": "password", "value": "ops123!", "temporary": false}],
+      "realmRoles": ["OPERATOR"],
+      "attributes": {
+        "participant_id": ["BI-OPS"],
+        "tier": ["TIER_1"]
+      }
+    }
+  ],
+  "protocolMappers": [
+    {
+      "name": "participant_id",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-usermodel-attribute-mapper",
+      "config": {
+        "user.attribute": "participant_id",
+        "claim.name": "participant_id",
+        "jsonType.label": "String",
+        "id.token.claim": "true",
+        "access.token.claim": "true"
+      }
+    },
+    {
+      "name": "tier",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-usermodel-attribute-mapper",
+      "config": {
+        "user.attribute": "tier",
+        "claim.name": "tier",
+        "jsonType.label": "String",
+        "id.token.claim": "true",
+        "access.token.claim": "true"
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+server:
+  port: 8085
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/detp
+    username: detp
+    password: detp
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+recon:
+  rtgs-url: http://localhost:8091
+  firefly-url: http://localhost:8092
+  tolerance: 0
+  sla-hours: 24
+  enforce-rtgs: false
