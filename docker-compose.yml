@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: detp
       POSTGRES_DB: detp
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/migrations/V1__core_tables.sql:/docker-entrypoint-initdb.d/V1__core_tables.sql
@@ -100,7 +100,6 @@ services:
       - POSTGRES_USER=detp
       - POSTGRES_PWD=detp
       - POSTGRES_SEEDS=postgres
-      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
     ports:
       - "7233:7233"
     depends_on:

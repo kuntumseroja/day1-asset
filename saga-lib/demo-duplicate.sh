@@ -13,7 +13,7 @@ send_pacs009() {
 }
 
 send_intake() {
-  curl -sf -X POST "$SAGA_URL/api/v1/intake/pacs009" \
+  curl -sf -m 5 -X POST "$SAGA_URL/api/v1/intake/pacs009" \
     -H 'Content-Type: application/json' \
     -d "{\"uetr\":\"$UETR\",\"amount\":100000000,\"participantId\":\"BANK-A\"}" || true
 }

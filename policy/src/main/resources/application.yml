@@ -2,11 +2,15 @@ server:
   port: 8084
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/detp
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/detp}
     username: detp
     password: detp
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    admin:
+      auto-create: true
+    listener:
+      auto-startup: ${KAFKA_ENABLED:true}
     consumer:
       group-id: policy-service
       auto-offset-reset: latest

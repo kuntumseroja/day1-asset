@@ -1,4 +1,4 @@
-.PHONY: up down health dev-up dev-down demo-duplicate demo-replay demo-contract-break demo-limit-change demo-break dry-run demos deploy-aws-portal
+.PHONY: up down health dev-up dev-down demo-duplicate demo-replay demo-contract-break demo-limit-change demo-break dry-run demos deploy-aws-portal docker-build debezium-smoke portal-e2e
 
 up:
 	docker compose up -d
@@ -33,6 +33,15 @@ demo-limit-change:
 
 demo-break:
 	./recon/demo-break.sh
+
+debezium-smoke:
+	./scripts/debezium-smoke.sh
+
+portal-e2e:
+	./scripts/portal-e2e.sh
+
+docker-build:
+	docker compose build policy recon saga-lib firefly-kit rtgs-sim firefly-stub portal-sim
 
 dry-run:
 	$(MAKE) -C ceremonies dry-run

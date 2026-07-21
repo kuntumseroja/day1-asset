@@ -101,7 +101,7 @@ public class PolicyRuleRepository {
     public void insertAudit(UUID ruleId, String action, String actorId, String detailJson) {
         jdbc.update("""
                 INSERT INTO detp.policy_audit (rule_id, action, actor_id, detail)
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?, ?::jsonb)
                 """, ruleId, action, actorId, detailJson);
     }
 
@@ -121,7 +121,7 @@ public class PolicyRuleRepository {
     public void publishOutbox(UUID ruleId, String payload) {
         jdbc.update("""
                 INSERT INTO detp.outbox (aggregate_type, aggregate_id, event_type, payload)
-                VALUES ('policy', ?, 'ConfigChanged', ?)
+                VALUES ('policy', ?, 'ConfigChanged', ?::jsonb)
                 """, ruleId.toString(), payload);
     }
 }

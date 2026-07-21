@@ -20,7 +20,9 @@ public class SagaBridge {
     private static final Logger log = LoggerFactory.getLogger(SagaBridge.class);
 
     private final ConfirmationListener listener;
-    private final HttpClient http = HttpClient.newHttpClient();
+    private final HttpClient http = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .build();
 
     @Value("${saga.url:http://localhost:8086}")
     private String sagaUrl;

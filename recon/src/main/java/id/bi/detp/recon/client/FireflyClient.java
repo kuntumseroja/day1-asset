@@ -14,7 +14,9 @@ import java.net.http.HttpResponse;
 public class FireflyClient {
 
     private final ReconProperties properties;
-    private final HttpClient http = HttpClient.newHttpClient();
+    private final HttpClient http = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .build();
     private final ObjectMapper mapper = new ObjectMapper();
 
     public FireflyClient(ReconProperties properties) {
@@ -22,14 +24,17 @@ public class FireflyClient {
     }
 
     public ChainSupply fetchSupply() {
+        String url = properties.fireflyUrl() + "/api/v1/tokens/wRD/supply";
         try {
             var req = HttpRequest.newBuilder()
-                    .uri(URI.create(properties.fireflyUrl() + "/api/v1/tokens/wRD/supply?blockHeight=finalized"))
+                    .uri(URI.create(url + "?blockHeight=finalized"))
+                    .header("Accept", "application/json")
                     .GET()
                     .build();
             var resp = http.send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() != 200) {
-                throw new IllegalStateException("firefly-stub supply failed: HTTP " + resp.statusCode());
+                throw new IllegalStateException(
+                        "firefly-stub supply failed: HTTP " + resp.statusCode() + " url=" + url + " body=" + resp.body());
             }
             JsonNode body = mapper.readTree(resp.body());
             long totalSupply = Long.parseLong(body.get("totalSupply").asText());

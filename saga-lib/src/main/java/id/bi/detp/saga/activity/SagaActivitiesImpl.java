@@ -18,7 +18,9 @@ public class SagaActivitiesImpl implements SagaActivities {
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper = new ObjectMapper();
-    private final HttpClient http = HttpClient.newHttpClient();
+    private final HttpClient http = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .build();
     private final String fireflyUrl = System.getenv().getOrDefault("FIREFLY_URL", "http://localhost:8092");
     private final String rtgsUrl = System.getenv().getOrDefault("RTGS_URL", "http://localhost:8091");
     private final String policyUrl = System.getenv().getOrDefault("POLICY_URL", "http://localhost:8084");
@@ -124,7 +126,7 @@ public class SagaActivitiesImpl implements SagaActivities {
         jdbc.update("UPDATE detp.saga_instances SET status = 'COMPENSATED', updated_at = NOW() WHERE uetr = ?", uetr);
         try {
             var payload = mapper.writeValueAsString(Map.of("uetr", uetr, "amount", amount, "participantId", participantId));
-            jdbc.update("INSERT INTO detp.outbox (aggregate_type, aggregate_id, event_type, payload) VALUES (?,?,?,?)",
+            jdbc.update("INSERT INTO detp.outbox (aggregate_type, aggregate_id, event_type, payload) VALUES (?,?,?,?::jsonb)",
                     "saga", uetr, "CompensatingRefundInstruction", payload);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -195,7 +197,7 @@ public class SagaActivitiesImpl implements SagaActivities {
     private void insertOutbox(java.sql.Connection conn, String uetr, String eventType, Map<String, Object> payload)
             throws Exception {
             try (var ps = conn.prepareStatement(
-                    "INSERT INTO detp.outbox (aggregate_type, aggregate_id, event_type, payload) VALUES (?,?,?,?)")) {
+                    "INSERT INTO detp.outbox (aggregate_type, aggregate_id, event_type, payload) VALUES (?,?,?,?::jsonb)")) {
                 ps.setString(1, "saga");
                 ps.setString(2, uetr);
                 ps.setString(3, eventType);

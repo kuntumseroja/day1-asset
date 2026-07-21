@@ -30,8 +30,8 @@ ceremonies/softhsm/
 pact/logs/
 contracts/pact/*.json
 
-# Docker volumes
-.docker/
+# Dev / logs
+.dev-logs/
 
 # Test / coverage
 coverage/

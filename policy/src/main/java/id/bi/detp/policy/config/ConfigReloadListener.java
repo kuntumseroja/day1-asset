@@ -3,10 +3,12 @@ package id.bi.detp.policy.config;
 import id.bi.detp.policy.service.RuleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(name = "spring.kafka.listener.auto-startup", havingValue = "true", matchIfMissing = true)
 public class ConfigReloadListener {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigReloadListener.class);

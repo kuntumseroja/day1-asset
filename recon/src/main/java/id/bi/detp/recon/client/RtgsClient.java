@@ -16,7 +16,9 @@ import java.net.http.HttpResponse;
 public class RtgsClient {
 
     private final ReconProperties properties;
-    private final HttpClient http = HttpClient.newHttpClient();
+    private final HttpClient http = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .build();
     private final ObjectMapper mapper = new ObjectMapper();
 
     public RtgsClient(ReconProperties properties) {

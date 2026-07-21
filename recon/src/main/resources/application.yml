@@ -3,11 +3,13 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/detp
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/detp}
     username: detp
     password: detp
   kafka:
     bootstrap-servers: localhost:9092
+    admin:
+      fail-fast: false
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer

@@ -10,6 +10,17 @@ const SAGA_WEBHOOK_URL = process.env.SAGA_WEBHOOK_URL || 'http://localhost:8086/
 const debits = new Map();
 let omnibusBalance = 10_000_000_000_000n; // 10T Rp starting omnibus
 
+function debitResponse(debit) {
+  return {
+    uetr: debit.uetr,
+    amount: debit.amount.toString(),
+    debtorAgent: debit.debtorAgent,
+    creditorAgent: debit.creditorAgent,
+    confirmedAt: debit.confirmedAt,
+    messageId: debit.messageId
+  };
+}
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'UP', service: 'rtgs-sim' });
 });
@@ -22,7 +33,11 @@ app.post('/api/v1/pacs009', async (req, res) => {
   }
 
   if (debits.has(uetr)) {
-    return res.status(200).json({ status: 'DUPLICATE', uetr, original: debits.get(uetr) });
+    return res.status(200).json({
+      status: 'DUPLICATE',
+      uetr,
+      original: debitResponse(debits.get(uetr))
+    });
   }
 
   const debit = {
@@ -72,7 +87,7 @@ app.get('/api/v1/camt053', (_req, res) => {
 app.get('/api/v1/debits/:uetr', (req, res) => {
   const debit = debits.get(req.params.uetr);
   if (!debit) return res.status(404).json({ error: 'not found' });
-  res.json({ ...debit, amount: debit.amount.toString() });
+  res.json(debitResponse(debit));
 });
 
 app.listen(PORT, () => {

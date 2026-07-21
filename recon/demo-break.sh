@@ -5,10 +5,19 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 RECON_URL="${RECON_URL:-http://localhost:8085}"
 FIREFLY_URL="${FIREFLY_URL:-http://localhost:8092}"
 RTGS_URL="${RTGS_URL:-http://localhost:8091}"
-PGURL="${PGURL:-postgresql://detp:detp@localhost:5432/detp}"
+PGURL="${PGURL:-postgresql://detp:detp@localhost:5433/detp}"
+
+psql_cmd() {
+  if command -v psql >/dev/null 2>&1; then
+    psql "$PGURL" "$@"
+  else
+    docker compose -f "$ROOT/docker-compose.yml" exec -T postgres \
+      psql -U detp -d detp "$@"
+  fi
+}
 
 MINT_AMOUNT="${MINT_AMOUNT:-50000000}"
-UETR="${UETR:-break-demo-00000000-0000-4000-8000-000000000001}"
+UETR="${UETR:-00000000-0000-4000-8000-000000000001}"
 PARTICIPANT="${PARTICIPANT:-BANK-A}"
 
 echo "=== Recon demo-break: suppress mint confirmation → case → replay → green ==="
@@ -26,7 +35,7 @@ require_service "firefly-stub" "$FIREFLY_URL/health"
 require_service "rtgs-sim" "$RTGS_URL/health"
 
 # Align chain supply with platform ledger baseline
-PLATFORM=$(psql "$PGURL" -tA -c \
+PLATFORM=$(psql_cmd -tA -c \
   "SELECT COALESCE((SELECT total_supply FROM detp.supply_ledger ORDER BY id DESC LIMIT 1), 0)")
 curl -sf -X POST "$FIREFLY_URL/control/reset-supply" \
   -H 'Content-Type: application/json' \
@@ -48,7 +57,7 @@ curl -sf -X POST "$RTGS_URL/api/v1/pacs009" \
   -H 'Content-Type: application/json' \
   -d "{\"uetr\":\"$UETR\",\"amount\":\"$MINT_AMOUNT\",\"debtorAgent\":\"$PARTICIPANT\"}" >/dev/null
 
-psql "$PGURL" -v ON_ERROR_STOP=1 -q -c \
+psql_cmd -v ON_ERROR_STOP=1 -q -c \
   "INSERT INTO detp.saga_instances (uetr, saga_type, status, amount, participant_id)
    VALUES ('$UETR', 'ISSUANCE', 'FUNDED', $MINT_AMOUNT, '$PARTICIPANT')
    ON CONFLICT (uetr) DO UPDATE SET status='FUNDED', amount=$MINT_AMOUNT, updated_at=NOW()"
@@ -89,7 +98,7 @@ REPLAY=$(curl -sf -X POST "$FIREFLY_URL/control/replay-from-offset" \
 REPLAY_COUNT=$(echo "$REPLAY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('count',0))")
 echo "Replay returned $REPLAY_COUNT events"
 
-psql "$PGURL" -v ON_ERROR_STOP=1 -q <<SQL
+psql_cmd -v ON_ERROR_STOP=1 -q <<SQL
 BEGIN;
 UPDATE detp.saga_instances SET status='SETTLED', updated_at=NOW() WHERE uetr='$UETR';
 INSERT INTO detp.wallet_balances (participant_id, balance)
