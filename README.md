@@ -13,7 +13,19 @@ See [SPEC.md](SPEC.md) for full build specification and sprint instructions.
 - Node.js 20+ (portal BFF, simulators)
 - Maven 3.9+ (Java modules)
 
-## Quick start
+## AWS Indonesia (Jakarta) deploy
+
+One-command deploy on EC2 in `ap-southeast-3`:
+
+```bash
+# On EC2 after clone — see deploy/aws/README.md
+cp deploy/aws/.env.example .env   # set PUBLIC_URL to Elastic IP
+./deploy/aws/deploy.sh
+```
+
+Or paste [`deploy/aws/user-data.sh`](deploy/aws/user-data.sh) into EC2 launch **User data** for fully automated bootstrap.
+
+## Quick start (local)
 
 ```bash
 # Start dev stack

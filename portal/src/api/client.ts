@@ -7,9 +7,10 @@ import type {
   TransactionDetail,
   UserProfile,
 } from './types';
+import { env } from '../config/env';
 
-const API_BASE = 'http://localhost:8093/api/v1';
-const RECON_BASE = 'http://localhost:8085/api/v1';
+const API_BASE = env.apiBase;
+const RECON_BASE = env.reconBase;
 
 function getToken(): string | null {
   return sessionStorage.getItem('detp_token');
@@ -68,4 +69,4 @@ export const api = {
   runRecon: () => reconRequest<unknown>('/recon/run', { method: 'POST' }),
 };
 
-export const WS_URL = 'ws://localhost:8093/api/v1/ws';
+export const WS_URL = env.wsUrl;
