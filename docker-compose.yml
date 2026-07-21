@@ -163,7 +163,9 @@ services:
       start_period: 20s
 
   portal-sim:
-    build: ./sim/portal-sim
+    build:
+      context: ./sim
+      dockerfile: portal-sim/Dockerfile
     ports:
       - "8093:8083"
     environment:

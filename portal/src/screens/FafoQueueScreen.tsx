@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  Button,
   DataTable,
   Table,
   TableBody,
@@ -54,59 +55,36 @@ const headers = [
   { key: 'status', header: 'Status' },
 ];
 
-// KF: BC-01.03 — FAFO settlement queue (strict FIFO, live status chips)
-export function FafoQueueScreen() {
-  const [queue, setQueue] = useState<QueueItem[]>([]);
-  const [loading, setLoading] = useState(true);
+const PENDING_STATUSES: TransactionStatus[] = ['QUEUED', 'FUNDING', 'MINTING'];
 
-  const refresh = useCallback(async () => {
-    try {
-      const items = await api.getQueue();
-      setQueue(items);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  useSettlementEvents(() => {
-    void refresh();
-  });
-
-  const rows = queue.map((item) => ({
-    id: item.uetr,
-    queuePosition: String(item.queuePosition),
-    uetr: item.uetr.slice(0, 8) + '…',
-    type: item.type,
-    amount: formatRp(item.amount),
-    participantId: item.participantId,
-    status: item.status,
-    duplicate: item.duplicateSuppressed,
-    fullUetr: item.uetr,
-  }));
-
+function QueueTable({
+  rows,
+  queue,
+}: {
+  rows: ReturnType<typeof mapRows>;
+  queue: QueueItem[];
+}) {
   return (
-    <Tile>
-      <h2>FAFO Settlement Queue</h2>
-      <p>Strictly FIFO — {loading ? 'loading…' : `${queue.length} pending items`}</p>
-      <TableContainer>
-        <DataTable rows={rows} headers={headers} size="md">
-          {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
-            <Table {...getTableProps()}>
-              <TableHead>
+    <TableContainer>
+      <DataTable rows={rows} headers={headers} size="md">
+        {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
+          <Table {...getTableProps()}>
+            <TableHead>
+              <TableRow>
+                {headers.map((header) => (
+                  <TableHeader {...getHeaderProps({ header })} key={header.key}>
+                    {header.header}
+                  </TableHeader>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rows.length === 0 ? (
                 <TableRow>
-                  {headers.map((header) => (
-                    <TableHeader {...getHeaderProps({ header })} key={header.key}>
-                      {header.header}
-                    </TableHeader>
-                  ))}
+                  <TableCell colSpan={headers.length}>No items</TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => {
+              ) : (
+                rows.map((row) => {
                   const original = queue.find((q) => q.uetr === row.id);
                   return (
                     <TableRow {...getRowProps({ row })} key={row.id}>
@@ -126,12 +104,84 @@ export function FafoQueueScreen() {
                       ))}
                     </TableRow>
                   );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </DataTable>
-      </TableContainer>
+                })
+              )}
+            </TableBody>
+          </Table>
+        )}
+      </DataTable>
+    </TableContainer>
+  );
+}
+
+function mapRows(queue: QueueItem[]) {
+  return queue.map((item) => ({
+    id: item.uetr,
+    queuePosition: String(item.queuePosition),
+    uetr: item.uetr.slice(0, 8) + '…',
+    type: item.type,
+    amount: formatRp(item.amount),
+    participantId: item.participantId,
+    status: item.status,
+    duplicate: item.duplicateSuppressed,
+    fullUetr: item.uetr,
+  }));
+}
+
+// KF: BC-01.03 — FAFO settlement queue (strict FIFO, live status chips)
+export function FafoQueueScreen() {
+  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [activity, setActivity] = useState<QueueItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try {
+      const [pending, all] = await Promise.all([api.getQueue(), api.getActivity()]);
+      setQueue(pending);
+      setActivity(all);
+    } catch {
+      setQueue([]);
+      setActivity([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  useSettlementEvents(() => {
+    void refresh();
+  });
+
+  const handleResetDemo = async () => {
+    setResetting(true);
+    try {
+      await api.resetDemo();
+      await refresh();
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const terminal = activity.filter((item) => !PENDING_STATUSES.includes(item.status));
+
+  return (
+    <Tile>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+        <h2 style={{ margin: 0 }}>FAFO Settlement Queue</h2>
+        <Button kind="tertiary" size="sm" onClick={() => void handleResetDemo()} disabled={resetting}>
+          {resetting ? 'Loading demo…' : 'Load scripted day'}
+        </Button>
+      </div>
+      <p>Strictly FIFO — {loading ? 'loading…' : `${queue.length} pending items`}</p>
+      <QueueTable rows={mapRows(queue)} queue={queue} />
+
+      <h3 style={{ marginTop: '2rem' }}>Today&apos;s activity</h3>
+      <p>Settled, denied, and duplicate-suppressed items (terminal states).</p>
+      <QueueTable rows={mapRows(terminal)} queue={terminal} />
     </Tile>
   );
 }

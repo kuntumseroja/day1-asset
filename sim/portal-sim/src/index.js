@@ -88,9 +88,17 @@ function loadScript() {
         emitSettlementEvent({ ...tx, eventType: 'QUEUE_UPDATE' });
       }
     }
+    console.log(`Loaded scripted day: ${transactions.size} transactions, ${getQueue().length} pending`);
   } catch (e) {
-    console.warn('Could not load scripted-day.json:', e.message);
+    console.warn('Could not load scripted-day.json:', e.message, `(path=${SCRIPT_PATH})`);
   }
+}
+
+function resetDemo() {
+  transactions.clear();
+  limits.perIssuanceUsed = 0;
+  limits.dailyCumulativeUsed = 1_200_000_000;
+  loadScript();
 }
 
 // Minimal auth stub — decode bearer as base64 JSON for dev
@@ -150,6 +158,21 @@ app.get('/api/v1/queue', authMiddleware, (_req, res) => {
   res.json(getQueue());
 });
 
+app.get('/api/v1/activity', authMiddleware, (_req, res) => {
+  const items = [...transactions.values()].sort((a, b) => a.queuePosition - b.queuePosition);
+  res.json(items);
+});
+
+/** Reset FAFO demo data (scripted day). Safe to call before Act 1 portal demo. */
+app.post('/api/v1/demo/reset', (_req, res) => {
+  resetDemo();
+  res.json({
+    reset: true,
+    pending: getQueue().length,
+    total: transactions.size
+  });
+});
+
 app.get('/api/v1/limits', authMiddleware, (_req, res) => {
   res.json(limits);
 });
@@ -178,8 +201,8 @@ app.get('/api/v1/transactions/:uetr', authMiddleware, (req, res) => {
 });
 
 app.post('/api/v1/replay/advance', (_req, res) => {
-  loadScript();
-  res.json({ replayed: true, transactionCount: transactions.size });
+  resetDemo();
+  res.json({ replayed: true, transactionCount: transactions.size, pending: getQueue().length });
 });
 
 wss.on('connection', (ws) => {
@@ -188,7 +211,7 @@ wss.on('connection', (ws) => {
 });
 
 // Auto-replay scripted day on startup
-setTimeout(loadScript, 1000);
+setTimeout(resetDemo, 1000);
 
 server.listen(PORT, () => {
   console.log(`portal-sim listening on :${PORT}`);

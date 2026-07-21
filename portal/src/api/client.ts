@@ -56,6 +56,11 @@ export const api = {
 
   getQueue: () => request<QueueItem[]>('/queue'),
 
+  getActivity: () => request<QueueItem[]>('/activity'),
+
+  resetDemo: () =>
+    request<{ reset: boolean; pending: number; total: number }>('/demo/reset', { method: 'POST' }),
+
   getLimits: () => request<LimitsDashboard>('/limits'),
 
   getTransaction: (uetr: string) => request<TransactionDetail>(`/transactions/${uetr}`),
