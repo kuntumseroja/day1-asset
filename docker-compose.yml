@@ -1,6 +1,14 @@
 services:
   postgres:
     image: postgres:16
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_replication_slots=4
+      - -c
+      - max_wal_senders=4
     environment:
       POSTGRES_USER: detp
       POSTGRES_PASSWORD: detp
@@ -43,7 +51,7 @@ services:
       retries: 10
 
   debezium:
-    image: debezium/connect:2.7
+    image: debezium/connect:2.7.3.Final
     ports:
       - "8083:8083"
     environment:
