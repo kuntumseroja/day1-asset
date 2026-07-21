@@ -146,7 +146,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 8
+      start_period: 20s
 
   firefly-stub:
     build: ./sim/firefly-stub
@@ -158,7 +159,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 8
+      start_period: 20s
 
   portal-sim:
     build: ./sim/portal-sim
@@ -177,7 +179,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 8
+      start_period: 20s
 
   saga-lib:
     build: ./saga-lib
