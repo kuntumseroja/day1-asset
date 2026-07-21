@@ -15,15 +15,24 @@ See [SPEC.md](SPEC.md) for full build specification and sprint instructions.
 
 ## AWS Indonesia (Jakarta) deploy
 
-One-command deploy on EC2 in `ap-southeast-3`:
+Step-by-step guide: **[deploy/aws/README.md](deploy/aws/README.md)**
+
+Quick summary:
+
+| Phase | Action |
+|-------|--------|
+| 0–3 | Jakarta region, key pair, security group, launch **Ubuntu 24.04 x86** |
+| 4 | Attach **Elastic IP** (before SSH depends on it) |
+| 5 | SSH → install Docker, Node, nginx, swap |
+| 6 | `git clone` + configure `.env` with `PUBLIC_URL` |
+| 7 | `./deploy/aws/deploy.sh` → open `http://YOUR_ELASTIC_IP` |
 
 ```bash
-# On EC2 after clone — see deploy/aws/README.md
 cp deploy/aws/.env.example .env   # set PUBLIC_URL to Elastic IP
 ./deploy/aws/deploy.sh
 ```
 
-Or paste [`deploy/aws/user-data.sh`](deploy/aws/user-data.sh) into EC2 launch **User data** for fully automated bootstrap.
+Automated: paste [`deploy/aws/user-data.sh`](deploy/aws/user-data.sh) into EC2 **User data** at launch.
 
 ## Quick start (local)
 
