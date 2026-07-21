@@ -6,13 +6,13 @@ import io.temporal.workflow.Workflow;
 
 import java.time.Duration;
 
-public class IssuanceSagaImpl implements IssuanceSaga {
+public class RedemptionSagaImpl implements RedemptionSaga {
 
     private final SagaActivities activities = Workflow.newActivityStub(SagaActivities.class,
             ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofMinutes(5)).build());
 
-    private boolean rtgsConfirmed;
-    private boolean dltFinalized;
+    private boolean burnConfirmed;
+    private boolean rtgsReleaseConfirmed;
 
     @Override
     public SagaResult run(IssuanceRequest request) {
@@ -26,38 +26,32 @@ public class IssuanceSagaImpl implements IssuanceSaga {
             return new SagaResult(request.uetr(), "DENIED", false);
         }
 
-        activities.submitRtgsFunding(request.uetr(), request.amount(), request.participantId());
+        // Redemption: burn BEFORE release (mirror ordering)
+        activities.burnTokens(request.uetr(), request.amount());
 
-        Workflow.await(Duration.ofMinutes(2), () -> rtgsConfirmed);
-        if (!rtgsConfirmed) {
+        Workflow.await(Duration.ofMinutes(2), () -> burnConfirmed);
+        if (!burnConfirmed) {
             activities.compensateRefund(request.uetr(), request.amount(), request.participantId());
             return new SagaResult(request.uetr(), "COMPENSATED", false);
         }
 
-        try {
-            activities.mintTokens(request.uetr(), request.amount());
-        } catch (Exception e) {
+        Workflow.await(Duration.ofMinutes(2), () -> rtgsReleaseConfirmed);
+        if (!rtgsReleaseConfirmed) {
             activities.compensateRefund(request.uetr(), request.amount(), request.participantId());
             return new SagaResult(request.uetr(), "COMPENSATED", false);
         }
 
-        Workflow.await(Duration.ofMinutes(2), () -> dltFinalized);
-        if (!dltFinalized) {
-            activities.compensateRefund(request.uetr(), request.amount(), request.participantId());
-            return new SagaResult(request.uetr(), "COMPENSATED", false);
-        }
-
-        activities.applyIssuanceState(request.uetr(), request.amount(), request.participantId());
+        activities.applyRedemptionState(request.uetr(), request.amount(), request.participantId());
         return new SagaResult(request.uetr(), "SETTLED", false);
     }
 
     @Override
-    public void rtgsDebitConfirmed(String uetr) {
-        rtgsConfirmed = true;
+    public void burnConfirmed(String uetr) {
+        burnConfirmed = true;
     }
 
     @Override
-    public void dltFinalityConfirmed(String uetr, String eventId) {
-        dltFinalized = true;
+    public void rtgsReleaseConfirmed(String uetr) {
+        rtgsReleaseConfirmed = true;
     }
 }

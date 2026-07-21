@@ -6,7 +6,7 @@ import io.temporal.workflow.Workflow;
 
 import java.time.Duration;
 
-public class IssuanceSagaImpl implements IssuanceSaga {
+public class TransferSagaImpl implements TransferSaga {
 
     private final SagaActivities activities = Workflow.newActivityStub(SagaActivities.class,
             ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofMinutes(5)).build());
@@ -47,7 +47,7 @@ public class IssuanceSagaImpl implements IssuanceSaga {
             return new SagaResult(request.uetr(), "COMPENSATED", false);
         }
 
-        activities.applyIssuanceState(request.uetr(), request.amount(), request.participantId());
+        activities.applyTransferState(request.uetr(), request.amount(), request.participantId(), "BANK-B");
         return new SagaResult(request.uetr(), "SETTLED", false);
     }
 

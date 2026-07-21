@@ -1,32 +1,32 @@
 CREATE SCHEMA IF NOT EXISTS detp;
 
 CREATE TABLE IF NOT EXISTS detp.policy_rules (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT random_uuid() PRIMARY KEY,
     name VARCHAR(128) NOT NULL,
     drl_content TEXT NOT NULL,
-    version INT NOT NULL DEFAULT 1,
-    status VARCHAR(16) NOT NULL DEFAULT 'DRAFT',
-    effective_from TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    version INT DEFAULT 1 NOT NULL,
+    status VARCHAR(16) DEFAULT 'DRAFT' NOT NULL,
+    effective_from TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     author_id VARCHAR(64) NOT NULL,
     approver_id VARCHAR(64),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS detp.policy_audit (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT random_uuid() PRIMARY KEY,
     rule_id UUID REFERENCES detp.policy_rules(id),
     action VARCHAR(32) NOT NULL,
     actor_id VARCHAR(64) NOT NULL,
-    detail JSONB,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    detail JSON,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS detp.outbox (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT random_uuid() PRIMARY KEY,
     aggregate_type VARCHAR(64) NOT NULL,
     aggregate_id VARCHAR(64) NOT NULL,
     event_type VARCHAR(64) NOT NULL,
-    payload JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    payload JSON NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );

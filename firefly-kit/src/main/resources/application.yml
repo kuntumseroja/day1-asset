@@ -2,10 +2,12 @@ server:
   port: 8087
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/detp
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/detp}
     username: detp
     password: detp
 firefly:
-  base-url: http://localhost:8092
-  ws-url: ws://localhost:8092/ws
+  base-url: ${FIREFLY_URL:http://localhost:8092}
+  ws-url: ${FIREFLY_WS_URL:ws://localhost:8092/ws}
   listener-id: firefly-kit-1
+saga:
+  url: ${SAGA_URL:http://localhost:8086}

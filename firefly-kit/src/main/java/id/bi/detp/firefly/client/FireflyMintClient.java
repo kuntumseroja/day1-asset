@@ -21,9 +21,16 @@ public class FireflyMintClient {
 
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     private final ObjectMapper mapper = new ObjectMapper();
+    private final String baseUrl;
 
-    @Value("${firefly.base-url:http://localhost:8092}")
-    private String baseUrl;
+    public FireflyMintClient(@Value("${firefly.base-url:http://localhost:8092}") String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    /** Visible for Pact/contract tests */
+    public FireflyMintClient(String baseUrl, boolean forTest) {
+        this.baseUrl = baseUrl;
+    }
 
     public record MintResult(String status, String mintId, String idempotencyKey, MintErrorAction action) {}
 

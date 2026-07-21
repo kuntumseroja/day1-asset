@@ -9,6 +9,7 @@ import type {
 } from './types';
 
 const API_BASE = 'http://localhost:8093/api/v1';
+const RECON_BASE = 'http://localhost:8085/api/v1';
 
 function getToken(): string | null {
   return sessionStorage.getItem('detp_token');
@@ -34,6 +35,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function reconRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${RECON_BASE}${path}`, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...(init?.headers as Record<string, string>) },
+  });
+  if (!res.ok) throw new Error(`Recon HTTP ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
 export const api = {
   getCurrentUser: () => request<UserProfile>('/auth/me'),
 
@@ -48,6 +58,14 @@ export const api = {
   getLimits: () => request<LimitsDashboard>('/limits'),
 
   getTransaction: (uetr: string) => request<TransactionDetail>(`/transactions/${uetr}`),
+
+  getReconStatus: () =>
+    reconRequest<{ status: 'GREEN' | 'RED'; lastRunAt?: string; openCases: number }>('/recon/status'),
+
+  getReconCases: () =>
+    reconRequest<Array<{ id: string; status: string; delta: number; candidateUetrs?: string[]; slaDeadline?: string }>>('/cases'),
+
+  runRecon: () => reconRequest<unknown>('/recon/run', { method: 'POST' }),
 };
 
 export const WS_URL = 'ws://localhost:8093/api/v1/ws';

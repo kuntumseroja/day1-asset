@@ -17,6 +17,7 @@ import { IssuanceScreen } from './screens/IssuanceScreen';
 import { FafoQueueScreen } from './screens/FafoQueueScreen';
 import { LimitsScreen } from './screens/LimitsScreen';
 import { TransactionDetailScreen } from './screens/TransactionDetailScreen';
+import { ReconScreen } from './screens/ReconScreen';
 import { useSettlementEvents } from './hooks/useSettlementEvents';
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -52,6 +53,9 @@ function AppLayout() {
           <HeaderMenuItem as={Link} to="/limits">
             Limits
           </HeaderMenuItem>
+          <HeaderMenuItem as={Link} to="/recon">
+            Recon
+          </HeaderMenuItem>
         </HeaderNavigation>
         <HeaderGlobalBar>
           <span style={{ padding: '0 1rem', fontSize: '0.875rem' }}>
@@ -67,6 +71,7 @@ function AppLayout() {
           <Route path="/issuance" element={<IssuanceScreen />} />
           <Route path="/queue" element={<FafoQueueScreen />} />
           <Route path="/limits" element={<LimitsScreen />} />
+          <Route path="/recon" element={<ReconScreen />} />
           <Route path="/transactions/:uetr" element={<TransactionDetailScreen />} />
           <Route path="*" element={<Navigate to="/issuance" replace />} />
         </Routes>

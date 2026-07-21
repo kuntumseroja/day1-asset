@@ -15,3 +15,11 @@ spring:
 
 policy:
   traffic-replay-path: ${TRAFFIC_REPLAY_PATH:../sim/yesterday-traffic.json}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: when_authorized

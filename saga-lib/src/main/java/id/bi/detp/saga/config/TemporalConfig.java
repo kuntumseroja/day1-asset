@@ -2,6 +2,8 @@ package id.bi.detp.saga.config;
 
 import id.bi.detp.saga.activity.SagaActivitiesImpl;
 import id.bi.detp.saga.workflow.IssuanceSagaImpl;
+import id.bi.detp.saga.workflow.RedemptionSagaImpl;
+import id.bi.detp.saga.workflow.TransferSagaImpl;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowClientOptions;
 import io.temporal.serviceclient.WorkflowServiceStubs;
@@ -29,7 +31,11 @@ public class TemporalConfig {
     WorkerFactory workerFactory(WorkflowClient client, SagaActivitiesImpl activities) {
         WorkerFactory factory = WorkerFactory.newInstance(client);
         Worker worker = factory.newWorker("saga-task-queue");
-        worker.registerWorkflowImplementationTypes(IssuanceSagaImpl.class);
+        worker.registerWorkflowImplementationTypes(
+                IssuanceSagaImpl.class,
+                RedemptionSagaImpl.class,
+                TransferSagaImpl.class
+        );
         worker.registerActivitiesImplementations(activities);
         factory.start();
         return factory;

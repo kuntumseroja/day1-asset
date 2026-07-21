@@ -4,8 +4,11 @@ import id.bi.detp.policy.domain.PolicyRuleRecord;
 import id.bi.detp.policy.domain.RuleStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
@@ -42,11 +45,15 @@ public class PolicyRuleRepository {
 
     public List<PolicyRuleRecord> findActiveEffective(Instant asOf) {
         return jdbc.query("""
-                SELECT DISTINCT ON (name) *
-                FROM detp.policy_rules
-                WHERE status = 'ACTIVE' AND effective_from <= ?
-                ORDER BY name, version DESC
-                """, ROW_MAPPER, Timestamp.from(asOf));
+                SELECT r.* FROM detp.policy_rules r
+                INNER JOIN (
+                    SELECT name, MAX(version) AS max_version
+                    FROM detp.policy_rules
+                    WHERE status = 'ACTIVE' AND effective_from <= ?
+                    GROUP BY name
+                ) latest ON r.name = latest.name AND r.version = latest.max_version
+                WHERE r.status = 'ACTIVE' AND r.effective_from <= ?
+                """, ROW_MAPPER, Timestamp.from(asOf), Timestamp.from(asOf));
     }
 
     public Optional<PolicyRuleRecord> findById(UUID id) {
@@ -55,11 +62,28 @@ public class PolicyRuleRepository {
     }
 
     public PolicyRuleRecord insert(String name, String drlContent, String authorId, Instant effectiveFrom) {
-        UUID id = jdbc.queryForObject("""
-                INSERT INTO detp.policy_rules (name, drl_content, author_id, effective_from)
-                VALUES (?, ?, ?, ?)
-                RETURNING id
-                """, UUID.class, name, drlContent, authorId, Timestamp.from(effectiveFrom));
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(con -> {
+            PreparedStatement ps = con.prepareStatement("""
+                    INSERT INTO detp.policy_rules (name, drl_content, author_id, effective_from)
+                    VALUES (?, ?, ?, ?)
+                    """, new String[]{"id"});
+            ps.setString(1, name);
+            ps.setString(2, drlContent);
+            ps.setString(3, authorId);
+            ps.setTimestamp(4, Timestamp.from(effectiveFrom));
+            return ps;
+        }, keyHolder);
+        UUID id = (UUID) keyHolder.getKeys().get("ID");
+        if (id == null) {
+            id = (UUID) keyHolder.getKeys().get("id");
+        }
+        if (id == null && keyHolder.getKeys().get("ID") instanceof String s) {
+            id = UUID.fromString(s);
+        }
+        if (id == null && keyHolder.getKeys().get("id") instanceof String s) {
+            id = UUID.fromString(s);
+        }
         return findById(id).orElseThrow();
     }
 
@@ -77,7 +101,7 @@ public class PolicyRuleRepository {
     public void insertAudit(UUID ruleId, String action, String actorId, String detailJson) {
         jdbc.update("""
                 INSERT INTO detp.policy_audit (rule_id, action, actor_id, detail)
-                VALUES (?, ?, ?, ?::jsonb)
+                VALUES (?, ?, ?, ?)
                 """, ruleId, action, actorId, detailJson);
     }
 
@@ -97,7 +121,7 @@ public class PolicyRuleRepository {
     public void publishOutbox(UUID ruleId, String payload) {
         jdbc.update("""
                 INSERT INTO detp.outbox (aggregate_type, aggregate_id, event_type, payload)
-                VALUES ('policy', ?, 'ConfigChanged', ?::jsonb)
+                VALUES ('policy', ?, 'ConfigChanged', ?)
                 """, ruleId.toString(), payload);
     }
 }

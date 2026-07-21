@@ -1,0 +1,29 @@
+{
+  "name": "detp-outbox-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "detp",
+    "database.password": "detp",
+    "database.dbname": "detp",
+    "topic.prefix": "detp",
+    "schema.include.list": "detp",
+    "table.include.list": "detp.outbox",
+    "plugin.name": "pgoutput",
+    "publication.name": "detp_outbox_pub",
+    "slot.name": "detp_outbox_slot",
+    "transforms": "outbox",
+    "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
+    "transforms.outbox.route.topic.replacement": "settlement.events",
+    "transforms.outbox.table.field.event.id": "id",
+    "transforms.outbox.table.field.event.key": "aggregate_id",
+    "transforms.outbox.table.field.event.type": "event_type",
+    "transforms.outbox.table.field.event.payload": "payload",
+    "transforms.outbox.table.expand.json.payload": "true",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false"
+  }
+}

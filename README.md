@@ -20,8 +20,13 @@ See [SPEC.md](SPEC.md) for full build specification and sprint instructions.
 docker compose up -d
 
 # Wait for health checks, then verify simulators
-curl http://localhost:8081/health   # rtgs-sim
-curl http://localhost:8082/health   # firefly-stub
+# Verify simulators (host ports)
+curl http://localhost:8091/health   # rtgs-sim
+curl http://localhost:8092/health   # firefly-stub
+curl http://localhost:8093/health   # portal-sim
+
+# Java services (also in docker-compose)
+# saga-lib :8086, policy :8084, recon :8085, firefly-kit :8087
 
 # Run demo scripts (after sprint build)
 make demo-duplicate    # Asset 2
