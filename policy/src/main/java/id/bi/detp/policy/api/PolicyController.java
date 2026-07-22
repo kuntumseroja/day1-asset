@@ -25,6 +25,11 @@ public class PolicyController {
         return ruleService.evaluate(request);
     }
 
+    @GetMapping("/policy/caps")
+    public PolicyCapsDto getCaps() {
+        return ruleService.getActiveCaps();
+    }
+
     @GetMapping("/rules")
     public List<PolicyRuleDto> listRules(@RequestParam Optional<String> status) {
         return ruleService.listRules(status);

@@ -48,6 +48,21 @@ public class RuleService {
         return toResult(decision);
     }
 
+    public PolicyCapsDto getActiveCaps() {
+        long perIssuanceCap = 500_000_000L;
+        long dailyCumulativeCap = 5_000_000_000L;
+        for (PolicyRuleRecord rule : repository.findActiveEffective(clock.instant())) {
+            switch (rule.name()) {
+                case "per_issuance_cap" -> perIssuanceCap = PolicyCapsParser.perIssuanceCap(rule.drlContent());
+                case "daily_cumulative_cap" ->
+                        dailyCumulativeCap = PolicyCapsParser.dailyCumulativeCap(rule.drlContent());
+                default -> {
+                }
+            }
+        }
+        return new PolicyCapsDto(perIssuanceCap, dailyCumulativeCap);
+    }
+
     public List<PolicyRuleDto> listRules(Optional<String> status) {
         Optional<RuleStatus> filter = status.map(RuleStatus::from);
         return repository.findAll(filter).stream().map(this::toDto).toList();

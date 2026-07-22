@@ -3,7 +3,7 @@ import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import { readFileSync } from 'fs';
 import { randomUUID } from 'crypto';
-import { evaluatePolicy, fetchActiveCaps } from './policy-client.js';
+import { evaluatePolicy, fetchActiveCaps, checkPolicyHealth } from './policy-client.js';
 
 const app = express();
 const server = createServer(app);
@@ -23,6 +23,8 @@ const limits = {
   perIssuanceUsed: 0,
   dailyCumulativeCap: 5_000_000_000,
   dailyCumulativeUsed: 1_200_000_000,
+  policySynced: false,
+  policySource: 'default',
 };
 
 async function refreshCapsFromPolicy() {
@@ -30,8 +32,12 @@ async function refreshCapsFromPolicy() {
     const caps = await fetchActiveCaps();
     limits.perIssuanceCap = caps.perIssuanceCap;
     limits.dailyCumulativeCap = caps.dailyCumulativeCap;
+    limits.policySynced = true;
+    limits.policySource = caps.source;
   } catch (e) {
-    console.warn('Policy caps unavailable, using cached values:', e.message);
+    limits.policySynced = false;
+    limits.policySource = 'fallback';
+    console.warn('Policy caps unavailable:', e.message);
   }
 }
 
@@ -127,8 +133,14 @@ function authMiddleware(req, res, next) {
   }
 }
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'UP', service: 'portal-sim' });
+app.get('/health', async (_req, res) => {
+  const policyUp = await checkPolicyHealth();
+  res.json({
+    status: 'UP',
+    service: 'portal-sim',
+    policyUrl: process.env.POLICY_URL || 'http://localhost:8084',
+    policyReachable: policyUp,
+  });
 });
 
 app.get('/api/v1/auth/me', authMiddleware, (req, res) => {
@@ -238,7 +250,10 @@ wss.on('connection', (ws) => {
 });
 
 // Auto-replay scripted day on startup
-setTimeout(resetDemo, 1000);
+setTimeout(async () => {
+  resetDemo();
+  await refreshCapsFromPolicy();
+}, 1000);
 
 server.listen(PORT, () => {
   console.log(`portal-sim listening on :${PORT}`);
