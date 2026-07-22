@@ -72,12 +72,16 @@ const ingestSettlement = createSettlementIngest({ transactions, getQueue, emitSe
 function loadScript() {
   try {
     const data = JSON.parse(readFileSync(SCRIPT_PATH, 'utf8'));
+    const baseTime = Date.parse('2026-07-22T08:00:00Z');
+    const atForSeq = (seq) => new Date(baseTime + (seq ?? 0) * 60_000).toISOString();
+
     for (const ev of data.events) {
       if (ev.type === 'DUPLICATE') {
         const t = transactions.get(ev.uetr);
         if (t) {
           t.status = 'DUPLICATE_SUPPRESSED';
           t.duplicateSuppressed = true;
+          t.timeline.push({ status: 'DUPLICATE_SUPPRESSED', at: atForSeq(ev.seq) });
           emitSettlementEvent({ ...t, eventType: 'DUPLICATE_SUPPRESSED', duplicateSuppressed: true });
         }
         continue;
@@ -86,6 +90,7 @@ function loadScript() {
         const t = transactions.get(ev.uetr);
         if (t) {
           t.status = ev.status;
+          t.timeline.push({ status: ev.status, at: atForSeq(ev.seq) });
           emitSettlementEvent(t);
         }
         continue;
@@ -99,7 +104,7 @@ function loadScript() {
         participantId: ev.participantId,
         queuePosition: queueLen + 1,
         duplicateSuppressed: false,
-        timeline: [{ status: ev.status, at: new Date().toISOString() }]
+        timeline: [{ status: ev.status, at: atForSeq(ev.seq) }],
       };
       transactions.set(ev.uetr, tx);
       if (ev.status === 'DENIED') {
