@@ -45,6 +45,21 @@ function firstError(errors: FieldErrors): string | null {
   return errors.amount ?? errors.valueDate ?? errors.fundingReference ?? null;
 }
 
+function policyDenyMessage(reason: string): string {
+  switch (reason) {
+    case 'cutoff_window':
+      return 'Outside business hours (06:00–22:00 WIB). Try again during the operating window.';
+    case 'per_issuance_cap':
+      return 'Amount exceeds the active per-issuance policy cap.';
+    case 'daily_cumulative_cap':
+      return 'This issuance would exceed the daily cumulative cap.';
+    case 'tier_limit':
+      return 'Amount exceeds the limit for your participant tier.';
+    default:
+      return reason;
+  }
+}
+
 // KF: BC-01.02 — Issuance request form (amount Rp, value date, funding ref)
 export function IssuanceScreen() {
   const navigate = useNavigate();
@@ -107,7 +122,8 @@ export function IssuanceScreen() {
       const tx = await api.submitIssuance(req);
       navigate(`/transactions/${tx.uetr}`);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Submission failed');
+      const raw = err instanceof Error ? err.message : 'Submission failed';
+      setFormError(policyDenyMessage(raw));
     } finally {
       setSubmitting(false);
     }

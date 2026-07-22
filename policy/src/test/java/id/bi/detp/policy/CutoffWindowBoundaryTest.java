@@ -23,7 +23,8 @@ class CutoffWindowBoundaryTest {
 
     @Test
     void insideBusinessHoursAllows() throws Exception {
-        Instant morning = Instant.parse("2026-07-20T08:00:00Z");
+        // 09:00 WIB
+        Instant morning = Instant.parse("2026-07-20T02:00:00Z");
         PolicyDecision decision = DrlTestSupport.evaluateSample(
                 policyService, "cutoff_window",
                 DrlTestSupport.fact(100_000_000L, 0L, "TIER_1", morning));
@@ -32,7 +33,8 @@ class CutoffWindowBoundaryTest {
 
     @Test
     void lateNightDenies() throws Exception {
-        Instant late = Instant.parse("2026-07-20T23:30:00Z");
+        // 23:30 WIB
+        Instant late = Instant.parse("2026-07-20T16:30:00Z");
         PolicyDecision decision = DrlTestSupport.evaluateSample(
                 policyService, "cutoff_window",
                 DrlTestSupport.fact(100_000_000L, 0L, "TIER_1", late));
@@ -42,7 +44,8 @@ class CutoffWindowBoundaryTest {
 
     @Test
     void earlyMorningDenies() throws Exception {
-        Instant early = Instant.parse("2026-07-20T05:59:00Z");
+        // 05:59 WIB
+        Instant early = Instant.parse("2026-07-19T22:59:00Z");
         PolicyDecision decision = DrlTestSupport.evaluateSample(
                 policyService, "cutoff_window",
                 DrlTestSupport.fact(100_000_000L, 0L, "TIER_1", early));

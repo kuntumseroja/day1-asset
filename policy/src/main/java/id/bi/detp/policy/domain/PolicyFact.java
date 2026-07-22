@@ -1,9 +1,11 @@
 package id.bi.detp.policy.domain;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 
 public class PolicyFact {
+
+    private static final ZoneId POLICY_ZONE = ZoneId.of("Asia/Jakarta");
 
     private String participantId;
     private String tier;
@@ -22,8 +24,9 @@ public class PolicyFact {
         this.timestamp = timestamp;
     }
 
+    /** Business-hour checks use WIB (UTC+7), matching D-ETP operating timezone. */
     public int evalHour() {
-        return timestamp.atZone(ZoneOffset.UTC).getHour();
+        return timestamp.atZone(POLICY_ZONE).getHour();
     }
 
     public String getParticipantId() {
