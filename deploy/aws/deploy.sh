@@ -38,16 +38,13 @@ for i in $(seq 1 60); do
   sleep 10
 done
 
-# --- Portal build with public URLs (nginx same-origin paths) ---
+# --- Portal build (same-origin API paths — works with any Elastic IP / domain) ---
 echo "[2/4] Building portal..."
 cd "$REPO_ROOT/portal"
-export VITE_API_BASE="${PUBLIC_URL}/api/v1"
-export VITE_RECON_BASE="${PUBLIC_URL}/recon/api/v1"
-export VITE_WS_URL="${PUBLIC_URL//http:/ws:}/ws"
-# Fix wss for https public URLs
-if [[ "$PUBLIC_URL" == https://* ]]; then
-  export VITE_WS_URL="${PUBLIC_URL/https:/wss:}/ws"
-fi
+export VITE_API_BASE="/api/v1"
+export VITE_RECON_BASE="/recon/api/v1"
+# WebSocket URL is resolved at runtime from window.location in env.ts (prod)
+unset VITE_WS_URL
 
 npm ci --silent
 npm run build

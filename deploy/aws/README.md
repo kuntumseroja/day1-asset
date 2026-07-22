@@ -305,9 +305,15 @@ make demos
 
 | Variable | Value |
 |----------|--------|
-| `VITE_API_BASE` | `$PUBLIC_URL/api/v1` |
-| `VITE_RECON_BASE` | `$PUBLIC_URL/recon/api/v1` |
-| `VITE_WS_URL` | `ws://.../ws` |
+| `VITE_API_BASE` | `/api/v1` (same-origin — do **not** bake `localhost` or Elastic IP into JS) |
+| `VITE_RECON_BASE` | `/recon/api/v1` |
+| `VITE_WS_URL` | *(unset — resolved at runtime from `window.location`)* |
+
+Quick portal-only rebuild after UI changes:
+
+```bash
+./deploy/aws/rebuild-portal.sh
+```
 
 ---
 
@@ -366,8 +372,16 @@ Add swap (Phase 5) or resize to **t3.xlarge**.
 ### Portal loads but API fails
 
 ```bash
-grep PUBLIC_URL ~/day1-asset/.env
-./deploy/aws/deploy.sh   # rebuild portal + nginx
+# Backend must be up
+docker compose ps portal-sim policy recon
+curl -sf http://localhost:8093/health && echo " portal-sim OK"
+
+# Rebuild portal with same-origin API paths (fixes "Failed to fetch")
+cd ~/day1-asset && git pull
+./deploy/aws/rebuild-portal.sh
+
+# Hard-refresh browser (Cmd/Ctrl+Shift+R)
+# In DevTools → Network, requests should go to /api/v1/* not localhost:8093
 ```
 
 ### WebSocket not connecting

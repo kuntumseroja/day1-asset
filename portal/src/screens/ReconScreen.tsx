@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Tag, Tile, DataTable, Table, TableHead, TableRow, TableHeader, TableBody, TableCell, Loading } from '@carbon/react';
+import { Tag, Tile, DataTable, Table, TableHead, TableRow, TableHeader, TableBody, TableCell, Loading, InlineNotification } from '@carbon/react';
 // KF: BC-12.01 — Reconciliation status tile + discrepancy case list
 import { api } from '../api/client';
 
@@ -22,6 +22,7 @@ export function ReconScreen() {
   const [cases, setCases] = useState<DiscrepancyCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -32,9 +33,11 @@ export function ReconScreen() {
       ]);
       setStatus(s);
       setCases(c);
-    } catch {
-      setStatus({ status: 'RED', openCases: 0 });
+      setError(null);
+    } catch (err) {
+      setStatus(null);
       setCases([]);
+      setError(err instanceof Error ? err.message : 'Failed to load recon status');
     } finally {
       setLoading(false);
     }
@@ -56,7 +59,19 @@ export function ReconScreen() {
 
   if (loading) return <Loading description="Loading recon status..." />;
 
-  const tileClass = status?.status === 'GREEN' ? 'recon-green' : 'recon-red';
+  if (error || !status) {
+    return (
+      <InlineNotification
+        kind="error"
+        title="Reconciliation unavailable"
+        subtitle={error ?? 'Could not reach recon service at /recon/api/v1'}
+        hideCloseButton
+        role="alert"
+      />
+    );
+  }
+
+  const tileClass = status.status === 'GREEN' ? 'recon-green' : 'recon-red';
 
   return (
     <div>
@@ -64,12 +79,12 @@ export function ReconScreen() {
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', alignItems: 'center' }}>
         <Tile className={tileClass} style={{
           minWidth: 200,
-          background: status?.status === 'GREEN' ? '#198038' : '#da1e28',
+          background: status.status === 'GREEN' ? '#198038' : '#da1e28',
           color: '#fff',
         }}>
-          <h3 style={{ margin: 0 }}>{status?.status ?? 'UNKNOWN'}</h3>
-          <p style={{ margin: '0.5rem 0 0' }}>{status?.openCases ?? 0} open case(s)</p>
-          {status?.lastRunAt && <p style={{ fontSize: '0.75rem' }}>Last: {new Date(status.lastRunAt).toLocaleString()}</p>}
+          <h3 style={{ margin: 0 }}>{status.status}</h3>
+          <p style={{ margin: '0.5rem 0 0' }}>{status.openCases} open case(s)</p>
+          {status.lastRunAt && <p style={{ fontSize: '0.75rem' }}>Last: {new Date(status.lastRunAt).toLocaleString()}</p>}
         </Tile>
         <button type="button" onClick={runRecon} disabled={running}>
           {running ? 'Running…' : 'Run Recon Now'}

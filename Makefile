@@ -46,10 +46,8 @@ docker-build:
 dry-run:
 	$(MAKE) -C ceremonies dry-run
 
-# Build portal for AWS (set PUBLIC_URL first, e.g. http://13.212.xxx.xxx)
+# Build portal for AWS — same-origin paths (no Elastic IP baked into JS)
 deploy-aws-portal:
-	@test -n "$(PUBLIC_URL)" || (echo "Set PUBLIC_URL=http://your-elastic-ip" && exit 1)
-	cd portal && VITE_API_BASE="$(PUBLIC_URL)/api/v1" \
-		VITE_RECON_BASE="$(PUBLIC_URL)/recon/api/v1" \
-		VITE_WS_URL="$$(echo $(PUBLIC_URL) | sed 's|^http:|ws:|')/ws" \
+	cd portal && VITE_API_BASE="/api/v1" \
+		VITE_RECON_BASE="/recon/api/v1" \
 		npm run build
