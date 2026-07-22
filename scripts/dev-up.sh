@@ -2,9 +2,10 @@
 # Start D-ETP dev stack: infra in Docker, sims + Java services locally
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck disable=SC1091
+source "$ROOT/scripts/docker-env.sh"
 cd "$ROOT"
 
-export DOCKER_HOST="${DOCKER_HOST:-unix://$HOME/.colima/default/docker.sock}"
 LOG_DIR="$ROOT/.dev-logs"
 mkdir -p "$LOG_DIR"
 

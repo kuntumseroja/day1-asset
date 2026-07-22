@@ -12,7 +12,8 @@ if [ -d "$LOG_DIR" ]; then
   done
 fi
 
-export DOCKER_HOST="${DOCKER_HOST:-unix://$HOME/.colima/default/docker.sock}"
+# shellcheck disable=SC1091
+source "$ROOT/scripts/docker-env.sh"
 cd "$ROOT"
 docker compose stop 2>/dev/null || true
 echo "Dev stack stopped."

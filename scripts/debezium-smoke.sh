@@ -3,8 +3,9 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+# shellcheck disable=SC1091
+source "$ROOT/scripts/docker-env.sh"
 
-export DOCKER_HOST="${DOCKER_HOST:-unix://$HOME/.colima/default/docker.sock}"
 CONNECT_URL="${CONNECT_URL:-http://localhost:8083}"
 PGURL="${PGURL:-postgresql://detp:detp@localhost:5433/detp}"
 
