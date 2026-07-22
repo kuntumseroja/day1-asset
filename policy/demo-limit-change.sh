@@ -87,4 +87,14 @@ HTTP=$(curl -s -o /dev/null -w '%{http_code}' -X PATCH "$POLICY_URL/api/v1/rules
   -d "{\"action\":\"APPROVE\",\"actorId\":\"$AUTHOR\"}")
 [ "$HTTP" = "403" ] || { echo "FAIL: expected 403 for self-approve, got $HTTP"; exit 1; }
 
+echo "Step 6: portal limits dashboard reflects 750M cap..."
+PORTAL_SIM="${PORTAL_SIM:-http://localhost:8093}"
+if curl -sf "$PORTAL_SIM/health" >/dev/null 2>&1; then
+  CAP=$(curl -sf "$PORTAL_SIM/api/v1/limits" | python3 -c "import sys,json; print(json.load(sys.stdin)['perIssuanceCap'])")
+  [ "$CAP" = "750000000" ] || { echo "FAIL: expected portal perIssuanceCap 750M, got $CAP"; exit 1; }
+  echo "  portal limits perIssuanceCap=$CAP"
+else
+  echo "  SKIP: portal-sim not reachable at $PORTAL_SIM"
+fi
+
 echo "PASS: demo-limit-change — Rp 600M DENY→ALLOW without restart; self-approve blocked"

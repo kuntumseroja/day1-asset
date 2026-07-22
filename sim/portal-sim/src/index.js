@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import { readFileSync } from 'fs';
 import { randomUUID } from 'crypto';
+import { evaluatePolicy, fetchActiveCaps } from './policy-client.js';
 
 const app = express();
 const server = createServer(app);
@@ -21,8 +22,18 @@ const limits = {
   perIssuanceCap: 500_000_000,
   perIssuanceUsed: 0,
   dailyCumulativeCap: 5_000_000_000,
-  dailyCumulativeUsed: 1_200_000_000
+  dailyCumulativeUsed: 1_200_000_000,
 };
+
+async function refreshCapsFromPolicy() {
+  try {
+    const caps = await fetchActiveCaps();
+    limits.perIssuanceCap = caps.perIssuanceCap;
+    limits.dailyCumulativeCap = caps.dailyCumulativeCap;
+  } catch (e) {
+    console.warn('Policy caps unavailable, using cached values:', e.message);
+  }
+}
 
 function emitSettlementEvent(event) {
   const payload = {
@@ -124,13 +135,28 @@ app.get('/api/v1/auth/me', authMiddleware, (req, res) => {
   res.json(req.user);
 });
 
-app.post('/api/v1/issuance', authMiddleware, (req, res) => {
+app.post('/api/v1/issuance', authMiddleware, async (req, res) => {
   const { amount, valueDate, fundingReference } = req.body;
   if (!amount || !valueDate || !fundingReference) {
     return res.status(400).json({ error: 'validation failed' });
   }
-  if (amount > limits.perIssuanceCap) {
-    return res.status(403).json({ error: 'policy denied', reason: 'per_issuance_cap' });
+
+  await refreshCapsFromPolicy();
+  try {
+    const decision = await evaluatePolicy({
+      participantId: req.user.participantId,
+      tier: req.user.tier,
+      amount,
+      dailyCumulative: limits.dailyCumulativeUsed,
+    });
+    if (decision.decision === 'DENY') {
+      return res.status(403).json({ error: 'policy denied', reason: decision.reason });
+    }
+  } catch (e) {
+    console.warn('Policy evaluate failed, falling back to local cap:', e.message);
+    if (amount > limits.perIssuanceCap) {
+      return res.status(403).json({ error: 'policy denied', reason: 'per_issuance_cap' });
+    }
   }
 
   const uetr = randomUUID();
@@ -173,7 +199,8 @@ app.post('/api/v1/demo/reset', (_req, res) => {
   });
 });
 
-app.get('/api/v1/limits', authMiddleware, (_req, res) => {
+app.get('/api/v1/limits', authMiddleware, async (_req, res) => {
+  await refreshCapsFromPolicy();
   res.json(limits);
 });
 

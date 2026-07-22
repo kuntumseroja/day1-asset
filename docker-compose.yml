@@ -175,8 +175,10 @@ services:
     volumes:
       - ./sim/scripted-day.json:/app/scripted-day.json:ro
     depends_on:
-      - rtgs-sim
-      - policy
+      rtgs-sim:
+        condition: service_healthy
+      policy:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
       interval: 10s
