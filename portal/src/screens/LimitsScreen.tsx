@@ -35,7 +35,6 @@ function LimitMetric({ title, used, cap, description }: LimitMetricProps) {
   const remaining = Math.max(0, cap - used);
   const status = limitStatus(percent);
   const tag = STATUS_TAG[status];
-  const progressStatus = status === 'critical' ? 'error' : status === 'warning' ? 'active' : 'finished';
 
   return (
     <Tile style={{ height: '100%' }}>
@@ -86,7 +85,7 @@ function LimitMetric({ title, used, cap, description }: LimitMetricProps) {
           }
           value={percent}
           max={100}
-          status={progressStatus}
+          status="active"
           aria-label={`${title}: ${percent}% of ${formatRp(cap)} used`}
         />
       </Stack>
