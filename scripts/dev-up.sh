@@ -43,7 +43,7 @@ start_bg() {
 }
 
 echo "=== Starting simulators ==="
-start_bg rtgs-sim bash -c "cd sim/rtgs-sim && PORT=8091 SAGA_WEBHOOK_URL=http://localhost:8086/api/v1/rtgs/debit-confirmed npm start"
+start_bg rtgs-sim bash -c "cd sim/rtgs-sim && PORT=8091 SAGA_WEBHOOK_URL=http://localhost:8086/api/v1/rtgs/debit-confirmed PORTAL_SIM_URL=http://localhost:8093 npm start"
 start_bg firefly-stub bash -c "cd sim/firefly-stub && PORT=8092 npm start"
 start_bg portal-sim bash -c "cd sim/portal-sim && PORT=8093 npm start"
 

@@ -1,5 +1,6 @@
 package id.bi.detp.saga.api;
 
+import id.bi.detp.saga.integration.PortalSettlementNotifier;
 import id.bi.detp.saga.workflow.*;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
@@ -14,9 +15,11 @@ import java.util.concurrent.TimeUnit;
 public class IntakeController {
 
     private final WorkflowClient workflowClient;
+    private final PortalSettlementNotifier portalNotifier;
 
-    public IntakeController(WorkflowClient workflowClient) {
+    public IntakeController(WorkflowClient workflowClient, PortalSettlementNotifier portalNotifier) {
         this.workflowClient = workflowClient;
+        this.portalNotifier = portalNotifier;
     }
 
     @PostMapping("/intake/pacs009")
@@ -44,17 +47,22 @@ public class IntakeController {
             IssuanceSaga workflow = workflowClient.newWorkflowStub(IssuanceSaga.class,
                     WorkflowOptions.newBuilder().setTaskQueue("saga-task-queue").setWorkflowId(uetr).build());
             SagaResult result = WorkflowClient.execute(workflow::run, request).get(3, TimeUnit.MINUTES);
+            portalNotifier.notifyIssuanceResult(request, result);
             return ResponseEntity.accepted().body(result);
         }
         if (workflowClass == RedemptionSaga.class) {
             RedemptionSaga workflow = workflowClient.newWorkflowStub(RedemptionSaga.class,
                     WorkflowOptions.newBuilder().setTaskQueue("saga-task-queue").setWorkflowId("redemption-" + uetr).build());
             SagaResult result = WorkflowClient.execute(workflow::run, request).get(3, TimeUnit.MINUTES);
+            portalNotifier.notify(result.uetr(), participantId, "REDEMPTION", result.status(), amount,
+                    result.duplicate(), result.duplicate() ? "DUPLICATE_SUPPRESSED" : "STATUS_TRANSITION");
             return ResponseEntity.accepted().body(result);
         }
         TransferSaga workflow = workflowClient.newWorkflowStub(TransferSaga.class,
                 WorkflowOptions.newBuilder().setTaskQueue("saga-task-queue").setWorkflowId("transfer-" + uetr).build());
         SagaResult result = WorkflowClient.execute(workflow::run, request).get(3, TimeUnit.MINUTES);
+        portalNotifier.notify(result.uetr(), participantId, "TRANSFER", result.status(), amount,
+                result.duplicate(), result.duplicate() ? "DUPLICATE_SUPPRESSED" : "STATUS_TRANSITION");
         return ResponseEntity.accepted().body(result);
     }
 

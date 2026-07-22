@@ -4,6 +4,7 @@ import { WebSocketServer } from 'ws';
 import { readFileSync } from 'fs';
 import { randomUUID } from 'crypto';
 import { evaluatePolicy, fetchActiveCaps, checkPolicyHealth } from './policy-client.js';
+import { createSettlementIngest } from './settlement-ingest.js';
 
 const app = express();
 const server = createServer(app);
@@ -65,6 +66,8 @@ function getQueue() {
     .filter(t => ['QUEUED', 'FUNDING', 'MINTING'].includes(t.status))
     .sort((a, b) => a.queuePosition - b.queuePosition);
 }
+
+const ingestSettlement = createSettlementIngest({ transactions, getQueue, emitSettlementEvent });
 
 function loadScript() {
   try {
@@ -209,6 +212,16 @@ app.post('/api/v1/demo/reset', (_req, res) => {
     pending: getQueue().length,
     total: transactions.size
   });
+});
+
+/** Internal ingest from saga-lib / rtgs-sim — drives live FAFO queue updates. */
+app.post('/api/v1/settlement/ingest', (req, res) => {
+  try {
+    const tx = ingestSettlement(req.body);
+    res.status(200).json(tx);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
 });
 
 app.get('/api/v1/limits', authMiddleware, async (_req, res) => {

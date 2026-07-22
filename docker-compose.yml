@@ -142,6 +142,7 @@ services:
     environment:
       PORT: 8081
       SAGA_WEBHOOK_URL: http://saga-lib:8086/api/v1/rtgs/debit-confirmed
+      PORTAL_SIM_URL: http://portal-sim:8083
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 10s
@@ -196,6 +197,7 @@ services:
       FIREFLY_URL: http://firefly-stub:8082
       RTGS_URL: http://rtgs-sim:8081
       POLICY_URL: http://policy:8084
+      PORTAL_SIM_URL: http://portal-sim:8083
     depends_on:
       postgres:
         condition: service_healthy

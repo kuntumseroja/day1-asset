@@ -36,3 +36,14 @@ else
   echo "WARN: saga service may not be running; rtgs-sim dedup verified at stub level"
   echo "PASS: rtgs-sim duplicate detection works"
 fi
+
+echo "Check portal FAFO activity shows DUPLICATE_SUPPRESSED..."
+PORTAL_SIM="${PORTAL_SIM:-http://localhost:8093}"
+if curl -sf "$PORTAL_SIM/health" >/dev/null 2>&1; then
+  ACTIVITY=$(curl -sf "$PORTAL_SIM/api/v1/activity")
+  echo "$ACTIVITY" | grep -q "$UETR" || { echo "FAIL: UETR not in portal activity"; exit 1; }
+  echo "$ACTIVITY" | grep -q 'DUPLICATE_SUPPRESSED' || { echo "FAIL: expected DUPLICATE_SUPPRESSED in portal activity"; exit 1; }
+  echo "  portal activity includes $UETR as DUPLICATE_SUPPRESSED"
+else
+  echo "  SKIP: portal-sim not reachable at $PORTAL_SIM"
+fi

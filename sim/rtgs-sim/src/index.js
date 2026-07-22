@@ -1,5 +1,6 @@
 import express from 'express';
 import { randomUUID } from 'crypto';
+import { notifyPortal } from './portal-notify.js';
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -33,10 +34,20 @@ app.post('/api/v1/pacs009', async (req, res) => {
   }
 
   if (debits.has(uetr)) {
+    const original = debits.get(uetr);
+    void notifyPortal({
+      uetr,
+      participantId: original.debtorAgent,
+      transactionType: 'ISSUANCE',
+      status: 'DUPLICATE_SUPPRESSED',
+      amount: Number(original.amount),
+      duplicateSuppressed: true,
+      eventType: 'DUPLICATE_SUPPRESSED',
+    });
     return res.status(200).json({
       status: 'DUPLICATE',
       uetr,
-      original: debitResponse(debits.get(uetr))
+      original: debitResponse(original),
     });
   }
 
@@ -58,6 +69,16 @@ app.post('/api/v1/pacs009', async (req, res) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event: 'RtgsDebitConfirmed', uetr, amount: amount.toString(), confirmedAt: debit.confirmedAt })
   }).catch(() => {});
+
+  void notifyPortal({
+    uetr,
+    participantId: debit.debtorAgent,
+    transactionType: 'ISSUANCE',
+    status: 'FUNDING',
+    amount: Number(amount),
+    duplicateSuppressed: false,
+    eventType: 'QUEUE_UPDATE',
+  });
 
   res.status(202).json({ status: 'ACCEPTED', uetr, messageId: debit.messageId });
 });
