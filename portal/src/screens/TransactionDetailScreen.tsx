@@ -111,10 +111,13 @@ export function TransactionDetailScreen() {
               <pre
                 style={{
                   background: '#f4f4f4',
+                  color: '#161616',
                   padding: '1rem',
                   overflow: 'auto',
                   fontSize: '0.875rem',
                   lineHeight: 1.5,
+                  whiteSpace: 'pre-wrap',
+                  fontFamily: 'IBM Plex Mono, monospace',
                 }}
               >
                 {prettyPrintXml(tx.iso20022.xml)}
