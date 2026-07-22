@@ -1,4 +1,4 @@
-.PHONY: up down health dev-up dev-down demo-duplicate demo-replay demo-contract-break demo-limit-change demo-break dry-run demos deploy-aws-portal docker-build debezium-smoke portal-e2e
+.PHONY: up down health dev-up dev-down demo-duplicate demo-replay demo-contract-break demo-limit-change demo-break dry-run demos deploy-aws-portal docker-build debezium-smoke portal-e2e dlt-init dlt-start dlt-wire
 
 up:
 	docker compose up -d
@@ -45,6 +45,16 @@ docker-build:
 
 dry-run:
 	$(MAKE) -C ceremonies dry-run
+
+# Optional: real FireFly + Besu stack (requires ff CLI + ~4 GB RAM)
+dlt-init:
+	./scripts/dlt-firefly-init.sh
+
+dlt-start:
+	./scripts/dlt-firefly-start.sh
+
+dlt-wire:
+	./scripts/dlt-firefly-wire.sh
 
 # Build portal for AWS — same-origin paths (no Elastic IP baked into JS)
 deploy-aws-portal:

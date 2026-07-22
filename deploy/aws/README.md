@@ -289,6 +289,16 @@ make demos
 | Recon break case | `make demo-break` |
 | HSM ceremony | `make dry-run` |
 
+Full stakeholder walkthrough for FireFly, Besu, smart contracts, Kaleido, and Paladin: [`docs/DLT-DEMO.md`](../../docs/DLT-DEMO.md).
+
+Optional local Besu stack (developer machine):
+
+```bash
+make dlt-init && make dlt-start
+make dlt-wire   # print FIREFLY_URL exports
+docker compose -f docker-compose.yml -f docker-compose.dlt.yml up -d saga-lib firefly-kit recon
+```
+
 ---
 
 ## Environment variables

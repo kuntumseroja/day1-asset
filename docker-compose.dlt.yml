@@ -1,0 +1,37 @@
+# Optional overlay: wire day-one services to a REAL FireFly stack (Besu) on the host.
+#
+# Prerequisites:
+#   1. ./scripts/dlt-firefly-init.sh && ./scripts/dlt-firefly-start.sh
+#   2. FireFly Core listening on host port 5000 (default ff stack)
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dlt.yml up -d saga-lib firefly-kit recon
+#
+# On Linux, host.docker.internal is mapped via host-gateway.
+# Override if FireFly runs elsewhere:
+#   FIREFLY_HOST=http://192.168.1.10:5000 docker compose -f ... up -d
+
+x-firefly-host: &firefly-host
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+services:
+  saga-lib:
+    <<: *firefly-host
+    environment:
+      FIREFLY_URL: ${FIREFLY_HOST:-http://host.docker.internal:5000}
+
+  firefly-kit:
+    <<: *firefly-host
+    environment:
+      FIREFLY_URL: ${FIREFLY_HOST:-http://host.docker.internal:5000}
+      FIREFLY_WS_URL: ${FIREFLY_WS_HOST:-ws://host.docker.internal:5000/ws}
+
+  recon:
+    <<: *firefly-host
+    environment:
+      RECON_FIREFLY_URL: ${FIREFLY_HOST:-http://host.docker.internal:5000}
+
+  # When using real FireFly, stop the stub to avoid confusion (optional):
+  # firefly-stub:
+  #   profiles: ["stub"]

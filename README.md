@@ -55,6 +55,9 @@ make demo-replay       # Asset 6
 make demo-limit-change # Asset 3
 make demo-break        # Asset 4
 make dry-run           # Asset 5
+
+# Full DLT walkthrough (stub vs Besu vs Kaleido): docs/DLT-DEMO.md
+# Optional real Besu stack: make dlt-init && make dlt-start
 ```
 
 ## Monorepo layout
@@ -69,6 +72,7 @@ make dry-run           # Asset 5
 | `firefly-kit/` | 6 | FireFly client, listener, Pact contracts |
 | `sim/` | — | rtgs-sim, firefly-stub, portal-sim |
 | `contracts/` | — | OpenAPI, Avro, Pact (single source of truth) |
+| `docs/DLT-DEMO.md` | 6 | DLT demo script (FireFly, Besu, Kaleido, Paladin) |
 
 ## Sprint order
 
