@@ -291,11 +291,14 @@ make demos
 
 Full stakeholder walkthrough for FireFly, Besu, smart contracts, Kaleido, and Paladin: [`docs/DLT-DEMO.md`](../../docs/DLT-DEMO.md).
 
-Optional local Besu stack (developer machine):
+**Separate EC2 for real Besu + FireFly:** [`deploy/aws/dlt-besu-ec2.md`](dlt-besu-ec2.md) (recommended for Jakarta; ~**$65–125/mo** vs Kaleido **~$450+/mo** for 4 nodes).
+
+Optional local or second-EC2 Besu stack:
 
 ```bash
 make dlt-init && make dlt-start
-make dlt-wire   # print FIREFLY_URL exports
+make dlt-wire   # print FIREFLY_URL exports (same host)
+./scripts/dlt-wire-remote.sh 10.0.2.87 --apply   # remote FireFly on EC2 B
 docker compose -f docker-compose.yml -f docker-compose.dlt.yml up -d saga-lib firefly-kit recon
 ```
 

@@ -107,9 +107,16 @@ curl -sf -X POST http://localhost:8092/control/suppress-next-confirmation
 
 ---
 
-## Mode B — Local Hyperledger FireFly + Besu (`ff` CLI)
+## Mode B — Local or separate EC2: Hyperledger FireFly + Besu (`ff` CLI)
 
-Runs a **real Besu node** and FireFly Supernode with deployed smart contracts. Use on a developer machine with **≥4 GB RAM** for Docker.
+Runs a **real Besu node** and FireFly Supernode with deployed smart contracts.
+
+| Where | Guide |
+|-------|--------|
+| Dev laptop | Steps below |
+| **Second EC2 in same VPC** | [`deploy/aws/dlt-besu-ec2.md`](../deploy/aws/dlt-besu-ec2.md) (recommended for Jakarta demos) |
+
+Requires **≥4 GB RAM** for Docker (8 GiB instance recommended).
 
 ### One-time setup
 
@@ -130,10 +137,14 @@ Default stack name: **`detp-besu`**. FireFly Core API is typically at **http://l
 ### Wire day-one services to real FireFly
 
 ```bash
-# Print export commands (Linux EC2 / macOS)
+# Print export commands (local ff stack)
 ./scripts/dlt-firefly-wire.sh
 
-# Or use compose overlay (Linux with host-gateway):
+# Remote host (second EC2 or Kaleido endpoint):
+./scripts/dlt-wire-remote.sh 10.0.2.87
+./scripts/dlt-wire-remote.sh 10.0.2.87 --apply   # EC2 A: stop stub + recreate services
+
+# Or use compose overlay (FireFly on same host as Docker):
 docker compose -f docker-compose.yml -f docker-compose.dlt.yml up -d saga-lib firefly-kit recon
 ```
 
@@ -183,6 +194,42 @@ Differences from stub (must mention in stakeholder demos):
 | Transport | Plain HTTP/WS | mTLS |
 | Signing | Open | HSM / ceremony key |
 | Supply query | In-memory counter | On-chain finalized state |
+
+### Kaleido cost (Besu + FireFly)
+
+Kaleido bills **hourly per resource**; Besu uses the same **Ethereum node** meter as Geth/Quorum. FireFly is available on Kaleido BaaS networks; **FireFly Enterprise** (dedicated middleware) is **contact sales** on [kaleido.io/pricing](https://www.kaleido.io/pricing).
+
+Official list prices (USD, check Kaleido for current rates):
+
+| Plan | Membership | Besu / ETH node (small) | Storage | Typical use |
+|------|------------|-------------------------|---------|-------------|
+| **Starter** | $0 | **Free** (max 2 nodes) | Free | Sandbox only; auto-limited |
+| **Developer** | $0 | **$0.15/hr** per node | $0.01 per 10 GB/hr | PoC / dev |
+| **Business** | **$49/mo** | **$0.55/hr** (small); medium $0.70; large $0.85 | $0.01 per 10 GB/hr | Production-ish |
+| **Enterprise** | Custom | Custom | Custom | Consortium, SOC2, multi-region |
+
+**Example — D-ETP-style 4-validator QBFT (4 small nodes, 24×7):**
+
+| Plan | Node compute | Membership | Storage (≈200 GB) | Support | **≈ Total / month** |
+|------|--------------|------------|-------------------|---------|---------------------|
+| Developer | 4 × $0.15 × 730 h = **$438** | $0 | ~$15 | $0 | **~$450** |
+| Business | 4 × $0.55 × 730 h = **$1,606** | $49 | ~$15 | 7% Select ≈ $115 | **~$1,785** |
+
+Kaleido's own **Business** example (1 node, not 4): ~**$462/mo** with membership + support ([pricing page](https://www.kaleido.io/pricing)).
+
+**Compare to self-managed second EC2 (this repo):**
+
+| Option | ≈ Monthly USD | Notes |
+|--------|---------------|-------|
+| EC2 B `t3.large` Jakarta | **~$65** + EBS | You operate Besu + `ff`; good for demos |
+| EC2 B stopped when idle | **~$5** EBS only | App EC2 A can stay on stub |
+| Kaleido Developer 4-node | **~$450** | Managed ops, no SSH |
+| Kaleido Business 4-node | **~$1,800+** | Production support tier |
+| Kaleido Enterprise / Asset Platform | **$10k+/mo** (Marketplace) | Regulated consortium; custom quote |
+
+**When Kaleido is worth it:** multi-org consortium, compliance (SOC2/ISO), mTLS and identity out of the box, no validator patching, multi-region — not raw $/hour vs a single EC2.
+
+**When EC2 B is enough:** integration testing, stakeholder demos, proving the same `FIREFLY_URL` seam before a Kaleido contract.
 
 ---
 
