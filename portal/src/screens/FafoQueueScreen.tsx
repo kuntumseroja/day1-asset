@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Button,
   DataTable,
@@ -64,6 +64,8 @@ function QueueTable({
   rows: ReturnType<typeof mapRows>;
   queue: QueueItem[];
 }) {
+  const navigate = useNavigate();
+
   return (
     <TableContainer>
       <DataTable rows={rows} headers={headers} size="md">
@@ -87,12 +89,23 @@ function QueueTable({
                 rows.map((row) => {
                   const original = queue.find((q) => q.uetr === row.id);
                   return (
-                    <TableRow {...getRowProps({ row })} key={row.id}>
+                    <TableRow
+                      {...getRowProps({ row })}
+                      key={row.id}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => navigate(`/transactions/${row.id}`)}
+                    >
                       {row.cells.map((cell) => (
                         <TableCell key={cell.id}>
-                          {cell.info.header === 'UETR' ? (
-                            <Link to={`/transactions/${row.id}`}>{cell.value}</Link>
-                          ) : cell.info.header === 'Status' && original ? (
+                          {cell.info.header === 'uetr' ? (
+                            <Link
+                              to={`/transactions/${row.id}`}
+                              className="cds--link"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {cell.value}
+                            </Link>
+                          ) : cell.info.header === 'status' && original ? (
                             <StatusChip
                               status={original.status}
                               duplicate={original.duplicateSuppressed}
